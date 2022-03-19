@@ -115,7 +115,7 @@ class TestImportRemoval:
         import sys
         print(sys.argv[1])
         """
-        assert remove_import(wrap(src), "abspath") == wrap(expected)
+        assert remove_import(wrap(src), "os.path.abspath") == wrap(expected)
 
     def test_remove_multiple_import_from(self, wrap):
         src = """\
@@ -128,7 +128,7 @@ class TestImportRemoval:
         import sys
         print(realpath(sys.argv[1]))
         """
-        assert remove_import(wrap(src), "abspath") == wrap(expected)
+        assert remove_import(wrap(src), "os.path.abspath") == wrap(expected)
 
     def test_remove_single_line_with_comment(self, wrap):
         src = """\
@@ -216,6 +216,81 @@ class TestImportRemoval:
         """
         with pytest.raises(ValueError):
             remove_import(wrap(src), "os")
+
+    def test_remove_from_first(self, wrap):
+        src = """\
+        from os import getcwd, environ, path
+
+        print(environ.keys())
+        """
+        expected = """\
+        from os import environ, path
+
+        print(environ.keys())
+        """
+        assert remove_import(wrap(src), "os.getcwd") == wrap(expected)
+
+    def test_remove_from_middle(self, wrap):
+        src = """\
+        from os import getcwd, environ, path
+
+        print(getcwd())
+        """
+        expected = """\
+        from os import getcwd, path
+
+        print(getcwd())
+        """
+        assert remove_import(wrap(src), "os.environ") == wrap(expected)
+
+    def test_remove_from_last(self, wrap):
+        src = """\
+        from os import getcwd, environ, path
+
+        print(environ.keys())
+        """
+        expected = """\
+        from os import getcwd, environ
+
+        print(environ.keys())
+        """
+        assert remove_import(wrap(src), "os.path") == wrap(expected)
+
+    def test_remove_from_only(self, wrap):
+        src = """\
+        from os import getcwd
+
+        print('hello world')
+        """
+        expected = """\
+
+        print('hello world')
+        """
+        assert remove_import(wrap(src), "os.getcwd") == wrap(expected)
+
+    def test_remove_import_dot(self, wrap):
+        src = """\
+        import os.path
+
+        print('hello world')
+        """
+        expected = """\
+
+        print('hello world')
+        """
+        assert remove_import(wrap(src), "os.path") == wrap(expected)
+
+    def test_remove_from_import_as(self, wrap):
+        src = """\
+        from os import path as P
+
+        print('hello world')
+        """
+        expected = """\
+
+        print('hello world')
+        """
+        assert remove_import(wrap(src), "os.path as P") == wrap(expected)
 
 
 class TestAddImport:
@@ -529,6 +604,24 @@ class TestDetection:
         assert _detect_import_errors("datetime.now()", self.config) == {
             "required": ["from datetime import datetime"],
             "unused": [],
+        }
+
+    def test_extra_import_from(self):
+        assert _detect_import_errors("from datetime import datetime", self.config) == {
+            "required": [],
+            "unused": ["datetime.datetime"],
+        }
+
+    def test_extra_import_submodule(self):
+        assert _detect_import_errors("import os.path", [*self.config, "os.path"]) == {
+            "required": [],
+            "unused": ["os.path"],
+        }
+
+    def test_extra_from_import_as(self):
+        assert _detect_import_errors("from os import path as P", self.config) == {
+            "required": [],
+            "unused": ["os.path as P"],
         }
 
 

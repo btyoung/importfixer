@@ -239,8 +239,19 @@ def remove_import(content, name, filename=None):
 
     for node in tree.body:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
+            # If removing from os.path import abspath, name is "os.path.abspath",
+            #  but we're looking for "abspath" in the entry
+            if hasattr(node, "module"):
+                if not name.startswith(node.module):
+                    continue
+
+                short_name = name[len(node.module) + 1 :]
+            else:
+                short_name = name
+
             imports = [(n.name, n.asname) for n in node.names]
-            if (name, asname) not in imports:
+
+            if (short_name, asname) not in imports:
                 continue
 
             if len(imports) == 1:
@@ -273,14 +284,14 @@ def remove_import(content, name, filename=None):
                 stm = content[stm_start:stm_end]
 
                 if asname is None:
-                    trailing_comma_match = re.search(rf"{name}\s*,\s*", stm)
-                    leading_comma_match = re.search(rf"\s*,\s*{name}", stm)
+                    trailing_comma_match = re.search(rf"{short_name}\s*,\s*", stm)
+                    leading_comma_match = re.search(rf"\s*,\s*{short_name}", stm)
                 else:
                     trailing_comma_match = re.search(
-                        rf"{name}\s+as\s+{asname}\s*,\s*", stm
+                        rf"{short_name}\s+as\s+{asname}\s*,\s*", stm
                     )
                     leading_comma_match = re.search(
-                        rf"\s*,\s*{name}\s+as\s+{asname}", stm
+                        rf"\s*,\s*{short_name}\s+as\s+{asname}", stm
                     )
 
                 if trailing_comma_match:
