@@ -262,10 +262,10 @@ def remove_import(content, name, filename=None):
                 # Look for other items around it
                 #  ";  {import  x}  "
                 #  "{import x;  }"
-                #  "{import  #   \n}"
+                #  "{import  (#.?)\n}"
                 leading_semicolon_match = re.search(r"\s*;\s*$", content[:start])
                 trailing_semicolon_match = re.search(r"^\s*;\s*", content[end:])
-                trailing_line_end_match = re.search(r"^\s*(#.*)?\n?", content[end:])
+                trailing_line_end_match = re.search(r"^.*\n?", content[end:])
                 if leading_semicolon_match:
                     span = leading_semicolon_match.span()
                     start -= span[1] - span[0]

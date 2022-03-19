@@ -40,7 +40,7 @@ def wrap(request):
         post.extend(["cwd = os.getcwd()", "print(cwd)"])
 
     return lambda content: "\n".join(
-        pre + ([dedent(content).strip()] if content else []) + post
+        pre + ([dedent(content).rstrip()] if content else []) + post
     )
 
 
@@ -170,7 +170,7 @@ class TestImportRemoval:
         import sys
         print(sys.argv[1])
         """
-        expected = """
+        expected = """\
         import sys
         print(sys.argv[1])
         """
@@ -291,6 +291,32 @@ class TestImportRemoval:
         print('hello world')
         """
         assert remove_import(wrap(src), "os.path as P") == wrap(expected)
+
+    def test_trailing_comment(self, wrap):
+        # Issue #4
+        src = """\
+        import numpy
+
+        # x = numpy.array([1, 2, 3])
+        """
+        expected = """\
+
+        # x = numpy.array([1, 2, 3])
+        """
+        assert remove_import(wrap(src), "numpy") == wrap(expected)
+
+    def test_trailing_comment_as(self, wrap):
+        # Issue #4
+        src = """\
+        import numpy as np
+
+        # x = np.array([1, 2, 3])
+        """
+        expected = """\
+
+        # x = np.array([1, 2, 3])
+        """
+        assert remove_import(wrap(src), "numpy as np") == wrap(expected)
 
 
 class TestAddImport:
