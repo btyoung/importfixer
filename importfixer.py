@@ -453,6 +453,9 @@ def main(argv=None):
     parser.add_argument("-c", "--config", help="Input config")
     parser.add_argument("-d", "--diff", action="store_true", help="Show difference")
     parser.add_argument(
+        "--check", action="store_true", help="Check if file would be altered"
+    )
+    parser.add_argument(
         "-o",
         "--overwrite",
         action="store_true",
@@ -471,6 +474,13 @@ def main(argv=None):
 
     # Run Updates
     update = fiximports(content, args.config, Path(filename))
+
+    # Simply check if argument specified
+    if args.check:
+        if content == update:
+            sys.exit(0)
+        else:
+            sys.exit(1)
 
     # Do output
     if args.overwrite:

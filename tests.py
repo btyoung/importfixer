@@ -884,6 +884,36 @@ class TestCommandLine:
 
         assert captured != self.expected
 
+    def test_check_updates(self, tmp_path, cfgfile, mocker, capsys):
+        inputfile = tmp_path / "input.py"
+        inputfile.write_text(self.src)
+        mocker.patch("importfixer.DEFAULT_CONFIG_FILE", str(cfgfile))
+
+        with pytest.raises(SystemExit) as exit:
+            main([str(inputfile), "--check"])
+
+        captured = capsys.readouterr()
+
+        assert inputfile.read_text() == self.src
+        assert captured.out.strip() == ""
+        assert captured.err.strip() == ""
+        assert exit.value.code == 1
+
+    def test_check_no_updates(self, tmp_path, cfgfile, mocker, capsys):
+        inputfile = tmp_path / "input.py"
+        inputfile.write_text(self.expected)
+        mocker.patch("importfixer.DEFAULT_CONFIG_FILE", str(cfgfile))
+
+        with pytest.raises(SystemExit) as exit:
+            main([str(inputfile), "--check"])
+
+        captured = capsys.readouterr()
+
+        assert inputfile.read_text() == self.expected
+        assert captured.out.strip() == ""
+        assert captured.err.strip() == ""
+        assert exit.value.code == 0
+
     def test_config(self, cfgfile, tmp_path):
         inputfile = tmp_path / "input.py"
         outfile = tmp_path / "output.py"
