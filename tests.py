@@ -2,6 +2,7 @@
 Tests for importfixerer
 """
 import io
+import os
 from textwrap import dedent
 
 import pytest
@@ -538,6 +539,15 @@ class TestFindImport:
 
     def test_import_from_star(self):
         assert _find_import("abspath", self.config) == "from os.path import abspath"
+
+    def test_import_from_star_noall(self, mocker):
+        mocker.patch("importfixer._PARSED_ENTRIES", {})
+        osall = os.path.__all__
+        try:
+            del os.path.__all__
+            assert _find_import("abspath", self.config) == "from os.path import abspath"
+        finally:
+            os.path.__all__ = osall
 
     def test_import_from_spec(self):
         assert _find_import("List", self.config) == "from typing import List"

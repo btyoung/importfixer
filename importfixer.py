@@ -179,11 +179,14 @@ def _parse_config_entry(entry):
         import_from, names = match.groups()
         if names == "*":
             try:
-                names = list(
-                    importlib.import_module(import_from).__all__
-                )  # __dict__.keys())
+                module = importlib.import_module(import_from)
             except ImportError:
                 names = []
+            else:
+                try:
+                    names = list(module.__all__)
+                except AttributeError:
+                    names = [key for key in module.__dict__.keys() if key[0] != "_"]
 
             return {name: f"from {import_from} import {name}" for name in names}
 
