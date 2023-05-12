@@ -1030,3 +1030,65 @@ class TestCommandLine:
 
         assert inputfile.read_text() == self.src
         assert outfile.read_text() == self.expected
+
+    def test_add(self, tmp_path, capsys):
+        src = dedent(
+            """\
+            #! /usr/bin/env python
+            "Compute a sqrt"
+            import os
+            import sys
+
+            print(np.sqrt(int(sys.argv[1])))
+            """
+        ).strip()
+
+        expected = dedent(
+            """\
+            #! /usr/bin/env python
+            "Compute a sqrt"
+            import os
+            import sys
+            import extramod
+
+            print(np.sqrt(int(sys.argv[1])))
+            """
+        ).strip()
+
+        inputfile = tmp_path / "input.py"
+        inputfile.write_text(src)
+
+        main([str(inputfile), "--add", "extramod"])
+
+        captured = capsys.readouterr()
+        assert captured.out.strip() == expected
+
+    def test_remove(self, tmp_path, capsys):
+        src = dedent(
+            """\
+            #! /usr/bin/env python
+            "Compute a sqrt"
+            import os
+            import sys
+
+            print(np.sqrt(int(sys.argv[1])))
+            """
+        ).strip()
+
+        expected = dedent(
+            """\
+            #! /usr/bin/env python
+            "Compute a sqrt"
+            import os
+
+            print(np.sqrt(int(sys.argv[1])))
+            """
+        ).strip()
+
+        inputfile = tmp_path / "input.py"
+        inputfile.write_text(src)
+
+        main([str(inputfile), "--remove", "sys"])
+
+        captured = capsys.readouterr()
+        assert captured.out.strip() == expected

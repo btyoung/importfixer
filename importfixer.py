@@ -465,6 +465,8 @@ def main(argv=None):
         action="store_true",
         help="Overwrite input. Not compatible with <output>.",
     )
+    parser.add_argument("-a", "--add", help="Add a specific import")
+    parser.add_argument("-r", "--remove", help="Remove a specific import")
     args = parser.parse_args(argv)
 
     # Get input
@@ -477,7 +479,12 @@ def main(argv=None):
         content = sys.stdin.read()
 
     # Run Updates
-    update = fiximports(content, args.config, Path(filename))
+    if args.add is not None:
+        update = add_import(content, args.add, Path(filename))
+    elif args.remove is not None:
+        update = remove_import(content, args.remove, Path(filename))
+    else:
+        update = fiximports(content, args.config, Path(filename))
 
     # Simply check if argument specified
     if args.check:
