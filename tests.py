@@ -38,7 +38,7 @@ def wrap(request):
     if "w" in request.param:
         post.extend(["", ""])
     if "c" in request.param:
-        post.extend(["cwd = os.getcwd()", "print(cwd)"])
+        post.extend(["cwd = __name__", "print(cwd)"])
 
     return lambda content: "\n".join(
         pre + ([dedent(content).rstrip()] if content else []) + post
@@ -817,7 +817,67 @@ def test_fiximports(wrap):
     print(np.sqrt(int(sys.argv[1])))
     """
 
-    assert fiximports(dedent(src), config) == dedent(expected)
+    assert fiximports(dedent(wrap(src)), config) == dedent(wrap(expected))
+
+
+def test_fiximports_ignore_unconfigured_mod(wrap):
+    src = """\
+    import os
+    import sys
+    import unused_mod
+
+    print(np.sqrt(int(sys.argv[1])))
+    """
+    config = ["os", "sys", "numpy as np"]
+    expected = """\
+    import sys
+    import unused_mod
+    import numpy as np
+
+    print(np.sqrt(int(sys.argv[1])))
+    """
+
+    assert fiximports(wrap(dedent(src)), config) == dedent(wrap(expected))
+
+
+def test_func_import_inuse(wrap):
+    src = """\
+    import os
+
+    def myfunc():
+        import sys
+        print(np.sqrt(int(sys.argv[1])))
+    """
+    config = ["os", "sys", "numpy as np"]
+    expected = """\
+    import numpy as np
+
+    def myfunc():
+        import sys
+        print(np.sqrt(int(sys.argv[1])))
+    """
+    assert fiximports(dedent(wrap(src)), config) == dedent(wrap(expected))
+
+
+def test_func_import_notinuse(wrap):
+    src = """\
+    import os
+    import sys
+
+    def myfunc():
+        import unused_mod
+        print(np.sqrt(int(sys.argv[1])))
+    """
+    config = ["os", "sys", "numpy as np"]
+    expected = """\
+    import sys
+    import numpy as np
+
+    def myfunc():
+        import unused_mod
+        print(np.sqrt(int(sys.argv[1])))
+    """
+    assert fiximports(dedent(wrap(src)), config) == dedent(wrap(expected))
 
 
 # --------------------------------------------------------------------------------------

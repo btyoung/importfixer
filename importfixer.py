@@ -1,3 +1,4 @@
+{"required": [], "unused": []}
 #! /usr/bin/env python
 """
 Library to detect unimported modules and optionally add imports to the file
@@ -62,7 +63,8 @@ def fiximports(content, config=None, filename=None):
     import_errors = _detect_import_errors(content, config, filename)
 
     for unused_import in import_errors["unused"]:
-        content = remove_import(content, unused_import, filename)
+        if _find_import(unused_import, config) is not None:
+            content = remove_import(content, unused_import, filename)
 
     for required_import in import_errors["required"]:
         content = add_import(content, required_import, filename)
