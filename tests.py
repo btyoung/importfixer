@@ -514,6 +514,16 @@ class TestAddImport:
         """
         assert add_import(wrap(src), "from numpy import linalg") == wrap(expected)
 
+    def test_import_from_short_pattern_existing(self, wrap):
+        src = "from mod import m"
+        expected = "from mod import m, var"
+        assert add_import(wrap(src), "from mod import var") == wrap(expected)
+
+    def test_import_from_short_pattern_existing2(self, wrap):
+        src = "from mod import oldvar, m"
+        expected = "from mod import oldvar, m, var"
+        assert add_import(wrap(src), "from mod import var") == wrap(expected)
+
 
 # --------------------------------------------------------------------------------------
 #  Main Script Utilities
@@ -658,6 +668,33 @@ class TestDetection:
         assert _detect_import_errors("from os import path as P", self.config) == {
             "required": [],
             "unused": ["os.path as P"],
+        }
+
+    def test_from_in_function(self):
+        src = """\
+        import os
+        import sys
+
+        def printme():
+            print(sqrt(int(sys.argv[1])))
+        """
+        config = ["os", "sys", "from numpy import array, sqrt, pi"]
+        assert _detect_import_errors(dedent(src), config) == {
+            "required": ["from numpy import sqrt"],
+            "unused": ["os"],
+        }
+
+    def test_in_function(self):
+        src = """\
+        import os
+
+        def printme():
+            print(np.sqrt(int(sys.argv[1])))
+        """
+        config = ["os", "sys", "numpy as np"]
+        assert _detect_import_errors(dedent(src), config) == {
+            "required": ["numpy as np", "sys"],
+            "unused": ["os"],
         }
 
 

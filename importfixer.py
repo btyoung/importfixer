@@ -352,7 +352,6 @@ def add_import(content, name, filename=None):
         last_import_line = max(last_import_line, tree.body[0].end_lineno)
 
     for node in tree.body:
-        # print(node)
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             last_import_line = max(last_import_line, node.end_lineno)
 
@@ -412,7 +411,7 @@ def _add_import_to_node(content, node, import_name):
 def _alias_pattern(alias):
     ":returns: CompiledRegex: Regex pattern from ast alias"
     if alias.asname is None:
-        return re.compile(alias.name)
+        return re.compile(rf"(?<=[\s,\(]){alias.name}(?=[\s,;\)]|$)")
     else:
         return re.compile(rf"{alias.name}\s+as\s+{alias.asname}")
 
